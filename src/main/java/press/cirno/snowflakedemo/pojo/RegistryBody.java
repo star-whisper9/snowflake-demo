@@ -24,7 +24,7 @@ public class RegistryBody {
     private Long timestamp;
 
     @NotNull
-    @Pattern(regexp = "^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}[\\d:]*$")
+    @Pattern(regexp = "^(http|https)://([\\w.-]+|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(:[0-9]+)?(/.*)?$")
     private String exposedAddress;
 
     public RegistryBody(String ip, String mac, Long timestamp, String exposedAddress) {

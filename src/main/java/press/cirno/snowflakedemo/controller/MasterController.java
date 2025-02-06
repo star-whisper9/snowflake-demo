@@ -1,5 +1,7 @@
 package press.cirno.snowflakedemo.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +10,9 @@ import press.cirno.snowflakedemo.pojo.RegistryBody;
 import press.cirno.snowflakedemo.pojo.StandardResponse;
 import press.cirno.snowflakedemo.service.IMasterService;
 
+import java.io.IOException;
+
+@Slf4j
 @RestController
 @RequestMapping("/master")
 public class MasterController {
@@ -41,9 +46,10 @@ public class MasterController {
     }
 
     @GetMapping("/id")
-    public String getId() {
-        String worker = masterService.getWorker();
+    public void getId(HttpServletResponse response) throws IOException {
+        String worker = masterService.getWorker() + "worker/id";
+        log.warn("Redirect to {}", worker);
         // 返回一个 301 重定向
-        return "redirect:" + worker + "/worker/id";
+        response.sendRedirect(worker);
     }
 }

@@ -27,13 +27,13 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class WorkerService implements IWorkerService {
 
     // 上线基准时间
-    private static final long startTime = 1754957520000L;
+    private static final long startTime = 1723421520000L;
     private boolean registered = false;
     private long lastHeartbeat = 0L;
     private RegistryBody body;
 
     private long lastTimestamp = 0L;
-    private int sequence = 0;
+    private long sequence = 0;
     private int workerId = -1;
 
     private final AppConfig appConfig;
@@ -75,7 +75,6 @@ public class WorkerService implements IWorkerService {
             sequence = 0;
         }
         lastTimestamp = timestamp;
-
         return ((timestamp - startTime) << 22) | ((long) workerId << 10) | sequence;
     }
 
@@ -105,6 +104,7 @@ public class WorkerService implements IWorkerService {
     /**
      * 初始化 Worker
      */
+    @Override
     public synchronized void init() {
         if (register() < 1) {
             log.error("Worker 注册失败");
@@ -127,6 +127,7 @@ public class WorkerService implements IWorkerService {
         this.body.setIp(address.get(0));
         this.body.setMac(address.get(1));
         this.body.setTimestamp(getTime());
+        this.body.setExposedAddress(appConfig.getExposedAddress());
 
         int retry = 0;
         while (retry < 3) {
@@ -173,7 +174,7 @@ public class WorkerService implements IWorkerService {
      */
     @Override
     public ScheduledFuture<?> startHeartbeat() {
-        return service.scheduleAtFixedRate(this::heartbeat, 0, 10, java.util.concurrent.TimeUnit.SECONDS);
+        return service.scheduleAtFixedRate(this::heartbeat, 5, 10, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     /**
@@ -182,24 +183,25 @@ public class WorkerService implements IWorkerService {
     private void heartbeat() {
         if (!registered) {
             log.error("心跳错误: Worker 未注册");
-            throw new WorkerManagementException("心跳错误: Worker 未注册");
+            System.exit(500);
         }
 
         List<String> address = NetworkUtil.getLocalNetworkInfo();
         if (address == null) {
             log.error("无法获取本机 IP / Mac 地址，心跳失败");
-            throw new WorkerManagementException("无法获取本机 IP / Mac 地址，心跳失败");
+            System.exit(500);
         }
 
         if (!address.get(0).equals(body.getIp()) || !address.get(1).equals(body.getMac())) {
             log.error("心跳错误: IP / Mac 地址发生变化");
-            throw new WorkerManagementException("心跳错误: IP / Mac 地址发生变化");
+            System.exit(500);
         }
 
         HeartbeatBody heartbeatBody = new HeartbeatBody(
                 address.get(0),
                 address.get(1),
                 getTime(),
+                appConfig.getExposedAddress(),
                 workerId
         );
 
@@ -214,12 +216,15 @@ public class WorkerService implements IWorkerService {
                 StandardResponse<String> responseBody = response.getBody();
                 if (responseBody.getCode() != 0) {
                     log.error("心跳失败: {}", responseBody.getMessage());
+                    System.exit(500);
                 }
             } else {
                 log.error("心跳请求失败: HTTP {}", response.getStatusCode());
+                System.exit(500);
             }
         } catch (Exception e) {
             log.error("心跳发生错误: {}", e.getMessage());
+            System.exit(500);
         }
     }
 }

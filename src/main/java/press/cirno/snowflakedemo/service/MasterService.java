@@ -50,7 +50,8 @@ public class MasterService implements IMasterService {
         WorkerPO workerPO = new WorkerPO(
                 body.getIp(),
                 body.getMac(),
-                body.getTimestamp()
+                body.getTimestamp(),
+                body.getExposedAddress()
         );
         // 保存出错会抛出异常
         WorkerPO savedWorkerPO = workerDAO.save(workerPO);
@@ -149,7 +150,7 @@ public class MasterService implements IMasterService {
     public ScheduledFuture<?> startCheckWorker() {
         return scheduledExecutorService.scheduleAtFixedRate(
                 this::checkWorker,
-                0,
+                1,
                 10,
                 TimeUnit.SECONDS);
     }

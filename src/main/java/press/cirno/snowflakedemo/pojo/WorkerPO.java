@@ -23,10 +23,11 @@ public class WorkerPO {
     @Column(nullable = false)
     private Long lastHeartbeat;
 
-    public WorkerPO(String ip, String mac, Long lastHeartbeat) {
+    public WorkerPO(String ip, String mac, Long lastHeartbeat, String exposedAddress) {
         this.ip = ip;
         this.mac = mac;
         this.lastHeartbeat = lastHeartbeat;
+        this.exposedAddress = exposedAddress;
     }
 
     public WorkerPO() {

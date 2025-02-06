@@ -14,8 +14,8 @@ public class HeartbeatBody extends RegistryBody {
     @Max(1023)
     private int workerId;
 
-    public HeartbeatBody(String ip, String mac, Long timestamp, int workerId) {
-        super(ip, mac, timestamp);
+    public HeartbeatBody(String ip, String mac, Long timestamp, String exposedAddress, int workerId) {
+        super(ip, mac, timestamp, exposedAddress);
         this.workerId = workerId;
     }
 }

@@ -35,8 +35,15 @@ public class NetworkUtil {
                             || inetAddress.isMulticastAddress()) {
                         continue;
                     }
+                    // 判断地址是否是 v6
                     String ip = inetAddress.getHostAddress();
+                    if (ip.contains(":")) {
+                        continue;
+                    }
                     String mac = getMacByIa(inetAddress);
+                    if (mac == null) {
+                        continue;
+                    }
                     return List.of(ip, mac);
                 }
             }
@@ -63,7 +70,7 @@ public class NetworkUtil {
     private static String getMacByIa(InetAddress ia) throws SocketException {
         byte[] mac = NetworkInterface.getByInetAddress(ia).getHardwareAddress();
         if (mac == null) {
-            throw new NetworkUtilException("获取 MAC 地址失败");
+            return null;
         }
         StringBuilder sb = new StringBuilder();
         for (byte b : mac) {
