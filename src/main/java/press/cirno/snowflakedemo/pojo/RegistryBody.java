@@ -34,12 +34,6 @@ public class RegistryBody {
         this.exposedAddress = exposedAddress;
     }
 
-    public RegistryBody(String ip, String mac, Long timestamp) {
-        this.ip = ip;
-        this.mac = mac;
-        this.timestamp = timestamp;
-    }
-
     public RegistryBody() {
 
     }
