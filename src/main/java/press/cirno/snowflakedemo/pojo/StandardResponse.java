@@ -2,6 +2,12 @@ package press.cirno.snowflakedemo.pojo;
 
 import lombok.Data;
 
+/**
+ * 标准响应<br >
+ * 返回 code：0 成功，-100 默认失败。其他遵循 负数失败，正数成功/未知
+ *
+ * @param <T> 返回体类型
+ */
 @Data
 public class StandardResponse<T> {
     private int code;

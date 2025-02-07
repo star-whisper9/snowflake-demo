@@ -7,6 +7,9 @@ import lombok.Setter;
 import lombok.ToString;
 import press.cirno.snowflakedemo.util.ValidTime;
 
+/**
+ * Worker 注册信息
+ */
 @Getter
 @Setter
 @ToString

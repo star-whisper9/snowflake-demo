@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import press.cirno.snowflakedemo.exception.TimeAccuracyException;
+import press.cirno.snowflakedemo.exception.WorkerManagementException;
 import press.cirno.snowflakedemo.pojo.HeartbeatBody;
 import press.cirno.snowflakedemo.pojo.RegistryBody;
 import press.cirno.snowflakedemo.pojo.WorkerPO;
@@ -108,7 +109,12 @@ public class MasterService implements IMasterService {
      */
     @Override
     public String getWorker() {
-        WorkerPO workerPO = workerList.get(new Random().nextInt(workerList.size()));
+        WorkerPO workerPO;
+        try {
+            workerPO = workerList.get(new Random().nextInt(workerList.size()));
+        } catch (Exception e) {
+            throw new WorkerManagementException("Worker 列表为空");
+        }
         return workerPO.getExposedAddress();
     }
 
@@ -153,5 +159,28 @@ public class MasterService implements IMasterService {
                 1,
                 10,
                 TimeUnit.SECONDS);
+    }
+
+    /**
+     * 手动取消注册 Worker
+     *
+     * @param body 注册信息
+     * @return 是否取消成功
+     */
+    @Override
+    public boolean unregister(RegistryBody body) {
+        WorkerPO workerPO = workerDAO.findTopByIpAndMacOrderByIdDesc(body.getIp(), body.getMac());
+        if (workerPO != null) {
+            workerDAO.delete(workerPO);
+            int index = workerList.indexOf(workerPO);
+            if (index != -1) {
+                workerList.remove(index);
+            } else {
+                log.error("Worker 未在工作列表中找到: {}", workerPO);
+            }
+            return true;
+        }
+        log.error("Worker 未注册: {}", body);
+        return false;
     }
 }

@@ -102,7 +102,8 @@ public class WorkerService implements IWorkerService {
     }
 
     /**
-     * 初始化 Worker
+     * 初始化 Worker<br >
+     * 在 Spring 容器启动后按需调用
      */
     @Override
     public synchronized void init() {
@@ -168,7 +169,8 @@ public class WorkerService implements IWorkerService {
 
     /**
      * 开始心跳线程<br >
-     * 心跳间隔 10 秒
+     * 心跳间隔 10 秒<br >
+     * 在初始化后调用
      *
      * @return 心跳任务句柄
      */
@@ -178,7 +180,8 @@ public class WorkerService implements IWorkerService {
     }
 
     /**
-     * 心跳
+     * 心跳<br >
+     * 每 10 秒发送一次心跳，任意一次失败则退出
      */
     private void heartbeat() {
         if (!registered) {
@@ -225,6 +228,40 @@ public class WorkerService implements IWorkerService {
         } catch (Exception e) {
             log.error("心跳发生错误: {}", e.getMessage());
             System.exit(500);
+        }
+    }
+
+    /**
+     * 注销 Worker<br >
+     * 应用程序销毁调用
+     *
+     * @return 是否注销成功
+     */
+    @Override
+    public void unregister() {
+        if (!registered) {
+            log.error("Worker 未注册，无法注销");
+        }
+
+        try {
+            ResponseEntity<Boolean> response = restTemplate.postForEntity(
+                    appConfig.getMasterAddress() + "/master/unregister",
+                    workerId,
+                    Boolean.class
+            );
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Assert.notNull(response.getBody(), "注销请求返回为空");
+                Boolean responseBody = response.getBody();
+                if (responseBody) {
+                    registered = false;
+                } else {
+                    log.error("注销失败");
+                }
+            } else {
+                log.error("注销请求失败: HTTP {}", response.getStatusCode());
+            }
+        } catch (Exception e) {
+            log.error("注销发生错误: {}", e.getMessage());
         }
     }
 }

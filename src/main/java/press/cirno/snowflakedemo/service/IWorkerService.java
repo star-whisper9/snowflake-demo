@@ -8,4 +8,6 @@ public interface IWorkerService {
     void init();
 
     ScheduledFuture<?> startHeartbeat();
+
+    void unregister();
 }

@@ -1,5 +1,6 @@
 package press.cirno.snowflakedemo;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,8 @@ public class SnowflakeDemoApplication implements ApplicationListener<Application
     }
 
     @Override
-    public void onApplicationEvent(ApplicationReadyEvent event) {
+    public void onApplicationEvent(@Nonnull ApplicationReadyEvent event) {
+        log.info("<---------应用启动，执行初始化方法--------->");
         int i = 0;
         if (appConfig.isMaster()) {
             iMasterService.initWorkerList();
@@ -61,11 +63,13 @@ public class SnowflakeDemoApplication implements ApplicationListener<Application
 
     @PreDestroy
     public void destroy() {
-        if (appConfig.isMaster()) {
-            masterFuture.cancel(true);
-        }
+        log.info("<---------优雅关闭，执行销毁方法--------->");
         if (appConfig.isWorker()) {
             workerFuture.cancel(true);
+            iWorkerService.unregister();
+        }
+        if (appConfig.isMaster()) {
+            masterFuture.cancel(true);
         }
     }
 

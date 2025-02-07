@@ -15,4 +15,6 @@ public interface IMasterService {
     void initWorkerList();
 
     ScheduledFuture<?> startCheckWorker();
+
+    boolean unregister(RegistryBody body);
 }

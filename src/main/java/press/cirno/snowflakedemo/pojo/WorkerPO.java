@@ -11,12 +11,14 @@ public class WorkerPO {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
+    // ip mac 组合识别一个唯一 Worker
     @Column(nullable = false, unique = true)
     private String ip;
 
     @Column(nullable = false, unique = true)
     private String mac;
 
+    // Worker 用于外部访问的地址
     @Column(name = "exposed_address", nullable = false)
     private String exposedAddress;
 
