@@ -18,4 +18,15 @@ public class AppConfig {
 
     @Value("${sf.worker.enabled}")
     private boolean worker = false;
+
+    // 回拨解决策略：reject/wait/auto
+    @Value("${sf.algo.clock-drift-strategy}")
+    private String clockDriftStrategy = "auto";
+
+    // wait 模式最长等待时间
+    @Value("${sf.algo.wait-time}")
+    private long waitTime = 30L;
+
+    @Value("${sf.algo.start-time}")
+    private String startTime = "2024-08-12 08:12:00";
 }

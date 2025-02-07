@@ -16,6 +16,7 @@ import press.cirno.snowflakedemo.pojo.RegistryBody;
 import press.cirno.snowflakedemo.pojo.StandardResponse;
 import press.cirno.snowflakedemo.util.NetworkUtil;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -26,12 +27,17 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 @Data
 public class WorkerService implements IWorkerService {
 
-    // 上线基准时间
-    private static final long startTime = 1723421520000L;
+    // 可配置块
+    private String clockDriftStrategy;
+    private long waitTime;
+    private long startTime;
+
+    // 应用服务相关
     private boolean registered = false;
     private long lastHeartbeat = 0L;
     private RegistryBody body;
 
+    // 雪花算法相关
     private long lastTimestamp = 0L;
     private long sequence = 0;
     private int workerId = -1;
@@ -61,9 +67,15 @@ public class WorkerService implements IWorkerService {
         }
 
         long timestamp = getTime();
-        if (timestamp < lastTimestamp) {
-            log.error("时钟回拨，拒绝生成 ID");
-            throw new TimeAccuracyException("时钟回拨，拒绝生成 ID");
+        while (timestamp < lastTimestamp) {
+            if (lastTimestamp - timestamp <= 30L && clockDriftStrategy.equalsIgnoreCase("auto")) {
+                timestamp = waitNextMillis(lastTimestamp);
+            } else if (clockDriftStrategy.equalsIgnoreCase("wait") && lastTimestamp - timestamp <= waitTime) {
+                timestamp = waitNextMillis(lastTimestamp);
+            } else {
+                log.error("时钟回拨，拒绝生成 ID");
+                throw new TimeAccuracyException("时钟回拨，拒绝生成 ID");
+            }
         }
 
         if (timestamp == lastTimestamp) {
@@ -112,6 +124,25 @@ public class WorkerService implements IWorkerService {
             throw new WorkerManagementException("Worker 注册失败");
         }
         lastTimestamp = getTime();
+        clockDriftStrategy = appConfig.getClockDriftStrategy().equalsIgnoreCase("reject")
+                || appConfig.getClockDriftStrategy().equalsIgnoreCase("wait")
+                ? appConfig.getClockDriftStrategy() : "auto";
+        if (appConfig.getWaitTime() > 1000L) {
+            log.warn("时钟回拨等待时间过长，最大仅支持 1000 ms");
+            waitTime = 1000L;
+        } else {
+            waitTime = appConfig.getWaitTime();
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            startTime = sdf.parse(appConfig.getStartTime()).getTime();
+        } catch (Exception e) {
+            log.error("解析起始时间失败: {}", e.getMessage());
+            try {
+                startTime = sdf.parse("2024-08-12 08:12:00").getTime();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     /**
@@ -234,8 +265,6 @@ public class WorkerService implements IWorkerService {
     /**
      * 注销 Worker<br >
      * 应用程序销毁调用
-     *
-     * @return 是否注销成功
      */
     @Override
     public void unregister() {
